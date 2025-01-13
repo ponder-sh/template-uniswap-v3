@@ -1,50 +1,22 @@
 import { ponder } from "ponder:registry";
 import schema from "ponder:schema";
 
-ponder.on("UniswapV3Pool:Flash", async ({ event, context }) => {
-  const poolAddress = event.log.address;
+ponder.on("UniswapV3Factory:PoolCreated", async ({ event, context }) => {
+  const poolAddress = event.args.pool;
+  await context.db.insert(schema.pool).values({
+    chainId: context.network.chainId,
+    address: poolAddress,
+    token0: event.args.token0,
+    token1: event.args.token1,
+  });
+});
 
-  const [token0, token1] = await Promise.all([
-    context.client.readContract({
-      abi: context.contracts.UniswapV3Pool.abi,
-      functionName: "token0",
-      address: poolAddress,
-      cache: "immutable",
-    }),
-    context.client.readContract({
-      abi: context.contracts.UniswapV3Pool.abi,
-      functionName: "token1",
-      address: poolAddress,
-      cache: "immutable",
-    }),
-  ]);
-
-  await context.db
-    .insert(schema.tokenBorrowed)
-    .values({
-      address: token0,
-      amount: event.args.amount0,
-    })
-    .onConflictDoUpdate((row) => ({ amount: row.amount + event.args.amount0 }));
-  await context.db
-    .insert(schema.tokenBorrowed)
-    .values({
-      address: token1,
-      amount: event.args.amount1,
-    })
-    .onConflictDoUpdate((row) => ({ amount: row.amount + event.args.amount1 }));
-  await context.db
-    .insert(schema.tokenPaid)
-    .values({
-      address: token0,
-      amount: event.args.paid0,
-    })
-    .onConflictDoUpdate((row) => ({ amount: row.amount + event.args.amount0 }));
-  await context.db
-    .insert(schema.tokenPaid)
-    .values({
-      address: token1,
-      amount: event.args.paid1,
-    })
-    .onConflictDoUpdate((row) => ({ amount: row.amount + event.args.amount1 }));
+ponder.on("UniswapV3Pool:Swap", async ({ event, context }) => {
+  await context.db.insert(schema.swapEvent).values({
+    chainId: context.network.chainId,
+    id: event.log.id,
+    pool: event.log.address,
+    amount0: event.args.amount0,
+    amount1: event.args.amount1,
+  });
 });
