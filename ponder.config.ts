@@ -5,13 +5,13 @@ import { UniswapV3FactoryAbi } from "./abis/UniswapV3FactoryAbi";
 import { UniswapV3PoolAbi } from "./abis/UniswapV3PoolAbi";
 
 const mainnetClient = createPublicClient({
-  transport: http(process.env.PONDER_RPC_URL_1),
+  transport: http("https://eth.llamarpc.com"),
 });
 const mainnetLatestBlock = await mainnetClient.getBlockNumber();
 const mainnetStartBlock = Number(mainnetLatestBlock) - 1000;
 
 const baseClient = createPublicClient({
-  transport: http(process.env.PONDER_RPC_URL_8453),
+  transport: http("https://mainnet.base.org"),
 });
 const baseLatestBlock = await baseClient.getBlockNumber();
 const baseStartBlock = Number(baseLatestBlock) - 1000;
